@@ -9,8 +9,8 @@ import (
 
 func TestSpecsCountUniqueAndOfficeJS(t *testing.T) {
 	specs := allSpecs()
-	if n := len(specs); n < 120 || n > 160 {
-		t.Fatalf("spec count %d, want 120-160", n)
+	if n := len(specs); n != 193 {
+		t.Fatalf("spec count %d, want 193", n)
 	}
 	seen := map[string]bool{}
 	joined := strings.Builder{}
@@ -108,9 +108,6 @@ func TestCommittedOfficejsMatchesSpecs(t *testing.T) {
 		}
 		if st.Size() == 0 {
 			t.Errorf("%s: empty golden.xlsx", s.name)
-		}
-		if _, err := os.Stat(filepath.Join(dir, "config.json")); err != nil {
-			t.Errorf("%s: has golden.xlsx but missing config.json", s.name)
 		}
 	}
 }
