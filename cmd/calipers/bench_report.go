@@ -187,7 +187,7 @@ tr { break-inside: avoid; page-break-inside: avoid; }
 <p>Both series run on the <strong>same Windows machine</strong>, sequentially: the next process starts only after the previous one has exited, so concurrency cannot spoil monitoring.</p>
 <p><strong>Excel</strong> — desktop Excel through COM (<code>Excel.Application</code> on an STA thread, alerts and window hidden, then open / save xlsx). Office.js tasks use a <strong>sideloaded Office.js add-in</strong>, not AppSource and not Office Scripts: the add-in <code>Excel.run</code>s the script, then the workbook is saved.</p>
 <p><strong>Mog</strong> — <code>save in.xlsx out.xlsx</code> or <code>run in.xlsx script.js out.xlsx</code>.</p>
-<p><strong>Wall time</strong> is that task’s elapsed time. <strong>Peak working set</strong> is sampled every 25&nbsp;ms (Windows <code>PeakWorkingSetSize</code> of <code>EXCEL.EXE</code> or the child; Unix <code>VmHWM</code>).</p>
+<p><strong>Wall time</strong> is that task’s elapsed time. <strong>Peak working set</strong> is sampled every 25&nbsp;ms (Windows <code>PeakWorkingSetSize</code> of <code>EXCEL.EXE</code> or the child; Linux <code>VmHWM</code> from <code>/proc/&lt;pid&gt;/status</code>; macOS current RSS from <code>proc_info(PROC_PIDTASKINFO)</code>, maximum kept by the sampler).</p>
 </div>
 <ul class="engines">
 `)

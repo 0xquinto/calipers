@@ -749,12 +749,20 @@ func captureStdout(t *testing.T, fn func() error) (string, error) {
 	}
 	old := os.Stdout
 	os.Stdout = w
+	// Drain concurrently: printf Syncs stdout after every write, and
+	// FlushFileBuffers on a Windows pipe blocks until a reader consumes
+	// the data, so reading only after fn returns deadlocks there.
+	outc := make(chan string)
+	go func() {
+		out, _ := io.ReadAll(r)
+		outc <- string(out)
+	}()
 	fnErr := fn()
 	_ = w.Close()
 	os.Stdout = old
-	out, _ := io.ReadAll(r)
+	out := <-outc
 	_ = r.Close()
-	return string(out), fnErr
+	return out, fnErr
 }
 
 func openedCaseIDs(fake *fakeEngine) map[string]bool {

@@ -3,6 +3,7 @@
 package main
 
 import (
+	"os/exec"
 	"strings"
 	"unsafe"
 
@@ -68,4 +69,8 @@ func processPeakBytes(pid int) int64 {
 		return 0
 	}
 	return int64(mem.PeakWorkingSetSize)
+}
+
+func rusagePeakBytes(cmd *exec.Cmd) int64 {
+	return 0
 }

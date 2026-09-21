@@ -16,11 +16,13 @@ import (
 	"github.com/fundamental-research-labs/calipers/internal/excel"
 )
 
+// var, not const: tests override it to stop the sampler from ticking.
+var measureSampleEvery = 25 * time.Millisecond
+
 const (
 	defaultBudgetMargin = 1.5
 	durationFloorMs     = 250
 	memoryFloorBytes    = 32 << 20
-	measureSampleEvery  = 25 * time.Millisecond
 	measureBudgetsUsage = `calipers measure-budgets [--engine excel|PATH] [--margin 1.5] [--force] [--cases-dir DIR] [--suite NAME]
 
   Run each selected case, record wall time and peak working set, and write
@@ -43,7 +45,8 @@ const (
   same message as excel-save once there is work to do. Empty work
   (nothing to measure) succeeds on any OS.
 
-  Run this on Windows after excel-run-pass. Do not run it in Linux CI.
+  Run --engine excel on Windows after excel-run-pass. Do not run that in Linux CI.
+  --engine PATH records peak memory on Linux and macOS.
 `
 )
 
@@ -263,6 +266,9 @@ func measureChild(bin string, args []string) (memSample, error) {
 		}
 	}()
 	err := cmd.Wait()
+	if n := rusagePeakBytes(cmd); n > peak.Load() {
+		peak.Store(n)
+	}
 	sample := memSample{peakBytes: peak.Load(), duration: time.Since(start)}
 	cancel()
 	<-done

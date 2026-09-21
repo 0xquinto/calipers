@@ -12,7 +12,7 @@ This repository is the verification tool and its init corpus. It is not a spread
 
 ## Requirements
 
-- Go 1.22+
+- Go 1.25+
 - For `excel-save` and `excel-run`: Windows + Microsoft Excel (desktop)
 
 Off Windows, those commands exit with:
@@ -47,7 +47,7 @@ calipers excel-run <input.xlsx> <script.js> <output.xlsx>
 # Pending scripted goldens (Windows; skips cases that already have a golden)
 calipers excel-run-pass [cases-dir]
 
-# Optional peak-memory / duration budgets (Windows)
+# Optional peak-memory / duration budgets (--engine excel is Windows-only; --engine PATH works on Linux and macOS)
 calipers measure-budgets [--engine excel|PATH] [--margin 1.5] [--suite NAME]
 
 # Sequential Excel+Mog (or Mog-only) speed/memory series → JSON
@@ -89,7 +89,7 @@ calipers excel-run verification/cases/default/simple_set_a1/init.xlsx \
 calipers excel-run-pass
 calipers excel-run-pass verification/cases/officejs
 
-# Optional peak-memory / duration budgets (Windows)
+# Optional peak-memory / duration budgets (--engine excel is Windows-only)
 calipers measure-budgets --engine excel --suite officejs
 
 # Speed/memory vs Excel (Windows: both series, one task at a time)
@@ -124,9 +124,9 @@ Typical Windows run (both series on the same machine so concurrency cannot spoil
 calipers bench --engine excel --engine /path/to/mog --json bench.json --report ./report
 ```
 
-Excel uses the existing COM `Excel.Application` host (STA thread, `DisplayAlerts`/`Visible` off). Office.js cases use the **sideloaded Office.js add-in** — not AppSource, not Office Scripts — the same path as `excel-run`. Mog is the caller-supplied `save` / `run` binary (same argv as `verify --engine PATH`). Peak memory is Windows `PeakWorkingSetSize` of `EXCEL.EXE` / the child, or Unix `VmHWM`, sampled every 25 ms.
+Excel uses the existing COM `Excel.Application` host (STA thread, `DisplayAlerts`/`Visible` off). Office.js cases use the **sideloaded Office.js add-in** — not AppSource, not Office Scripts — the same path as `excel-run`. Mog is the caller-supplied `save` / `run` binary (same argv as `verify --engine PATH`). Peak memory is sampled every 25 ms: Windows `PeakWorkingSetSize` of `EXCEL.EXE` / the child; Linux `VmHWM` from `/proc/<pid>/status`; macOS current RSS from `proc_info(PROC_PIDTASKINFO)` (the sampler keeps the maximum).
 
-**Mog-only (Linux / this environment):** omit `--engine excel` so you can inspect the JSON and HTML before a colleague runs the Excel COM series on Windows:
+**Mog-only (Linux or macOS):** omit `--engine excel` so you can inspect the JSON and HTML before a colleague runs the Excel COM series on Windows:
 
 ```bash
 calipers bench --engine /path/to/mog --json bench.json --report ./report
