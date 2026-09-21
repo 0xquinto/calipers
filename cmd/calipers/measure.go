@@ -264,6 +264,9 @@ func measureChild(bin string, args []string) (memSample, error) {
 		}
 	}()
 	err := cmd.Wait()
+	if n := rusagePeakBytes(cmd); n > peak.Load() {
+		peak.Store(n)
+	}
 	sample := memSample{peakBytes: peak.Load(), duration: time.Since(start)}
 	cancel()
 	<-done

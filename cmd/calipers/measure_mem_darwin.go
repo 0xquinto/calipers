@@ -3,6 +3,8 @@
 package main
 
 import (
+	"os/exec"
+	"syscall"
 	"unsafe"
 
 	"golang.org/x/sys/unix"
@@ -63,4 +65,13 @@ func processPeakBytes(pid int) int64 {
 		return 0
 	}
 	return int64(info.ResidentSize)
+}
+
+// Darwin reports ru_maxrss in bytes; Linux and the BSDs in kilobytes.
+func rusagePeakBytes(cmd *exec.Cmd) int64 {
+	ru, ok := cmd.ProcessState.SysUsage().(*syscall.Rusage)
+	if !ok || ru == nil {
+		return 0
+	}
+	return ru.Maxrss
 }

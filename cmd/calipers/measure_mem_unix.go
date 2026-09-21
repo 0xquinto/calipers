@@ -7,8 +7,10 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
+	"syscall"
 )
 
 func excelPIDs() []int {
@@ -41,4 +43,13 @@ func processPeakBytes(pid int) int64 {
 		return kb * 1024
 	}
 	return 0
+}
+
+// ru_maxrss is in kilobytes on Linux and the BSDs.
+func rusagePeakBytes(cmd *exec.Cmd) int64 {
+	ru, ok := cmd.ProcessState.SysUsage().(*syscall.Rusage)
+	if !ok || ru == nil {
+		return 0
+	}
+	return ru.Maxrss * 1024
 }
