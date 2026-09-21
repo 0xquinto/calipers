@@ -16,11 +16,13 @@ import (
 	"github.com/fundamental-research-labs/calipers/internal/excel"
 )
 
+// var, not const: tests override it to stop the sampler from ticking.
+var measureSampleEvery = 25 * time.Millisecond
+
 const (
 	defaultBudgetMargin = 1.5
 	durationFloorMs     = 250
 	memoryFloorBytes    = 32 << 20
-	measureSampleEvery  = 25 * time.Millisecond
 	measureBudgetsUsage = `calipers measure-budgets [--engine excel|PATH] [--margin 1.5] [--force] [--cases-dir DIR] [--suite NAME]
 
   Run each selected case, record wall time and peak working set, and write

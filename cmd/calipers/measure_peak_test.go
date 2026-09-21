@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+	"time"
 )
 
 func TestMeasureChildCapturesTransientPeak(t *testing.T) {
@@ -16,6 +17,12 @@ func TestMeasureChildCapturesTransientPeak(t *testing.T) {
 	if err != nil {
 		t.Skip("cc not available")
 	}
+	// No sampler ticks during the child's life: the spike is invisible to
+	// the sampler and only ru_maxrss can report it, so the red side of
+	// this test is deterministic instead of a race against the 25 ms tick.
+	old := measureSampleEvery
+	measureSampleEvery = time.Hour
+	t.Cleanup(func() { measureSampleEvery = old })
 	dir := t.TempDir()
 	src := filepath.Join(dir, "spike.c")
 	bin := filepath.Join(dir, "spike")
@@ -23,10 +30,7 @@ func TestMeasureChildCapturesTransientPeak(t *testing.T) {
 	// -O2. mmap/munmap instead of malloc/free: darwin keeps freed malloc
 	// pages in the task's RSS, while munmap drops it deterministically.
 	code := `#include <string.h>
-#include <unistd.h>
 #include <sys/mman.h>
-
-#define IDLE_AFTER_SPIKE_US 400000
 
 volatile unsigned long sink;
 
@@ -39,7 +43,6 @@ int main(void) {
     for (size_t i = 0; i < n; i += 4096) s += (unsigned char)p[i];
     sink = s;
     munmap(p, n);
-    usleep(IDLE_AFTER_SPIKE_US);
     return 0;
 }
 `
