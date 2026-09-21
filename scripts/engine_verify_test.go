@@ -125,6 +125,9 @@ exit 0
 
 func runScript(t *testing.T, script, stubDir, calipersBin string, extraEnv []string, args ...string) []byte {
 	t.Helper()
+	if runtime.GOOS == "windows" {
+		t.Skip("the scripts under test are sh scripts")
+	}
 	cmd := exec.Command("bash", append([]string{script}, args...)...)
 	cmd.Dir = filepath.Dir(scriptsDir(t))
 	env := append(os.Environ(),

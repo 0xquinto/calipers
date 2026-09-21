@@ -10,6 +10,39 @@ import (
 	"testing"
 )
 
+// fakeEngine re-runs the test binary as a stand-in engine so the
+// execCommandContext stubs work on any OS. With mode "copy" the child
+// copies src to dst; with "noop" it exits 0 without writing.
+func fakeEngine(ctx context.Context, mode string, extra ...string) *exec.Cmd {
+	args := append([]string{"-test.run", "TestFakeEngineProcess", "--", mode}, extra...)
+	cmd := exec.CommandContext(ctx, os.Args[0], args...)
+	cmd.Env = append(os.Environ(), "CALIPERS_FAKE_ENGINE=1")
+	return cmd
+}
+
+func TestFakeEngineProcess(t *testing.T) {
+	if os.Getenv("CALIPERS_FAKE_ENGINE") != "1" {
+		return
+	}
+	args := os.Args
+	for i, a := range args {
+		if a == "--" {
+			args = args[i+1:]
+			break
+		}
+	}
+	if len(args) == 3 && args[0] == "copy" {
+		data, err := os.ReadFile(args[1])
+		if err != nil {
+			os.Exit(1)
+		}
+		if err := os.WriteFile(args[2], data, 0o644); err != nil {
+			os.Exit(1)
+		}
+	}
+	os.Exit(0)
+}
+
 func TestRunScriptRequiresPath(t *testing.T) {
 	h := New("engine")
 	if err := h.RunScript("in.xlsx", "", "out.xlsx"); err == nil {
@@ -40,7 +73,7 @@ func TestOpenSaveArgv(t *testing.T) {
 	old := execCommandContext
 	execCommandContext = func(ctx context.Context, name string, args ...string) *exec.Cmd {
 		got = append([]string{name}, args...)
-		return exec.CommandContext(ctx, "cp", in, out)
+		return fakeEngine(ctx, "copy", in, out)
 	}
 	defer func() { execCommandContext = old }()
 
@@ -69,7 +102,7 @@ func TestOpenSaveDoesNotAcceptStaleOutput(t *testing.T) {
 	old := execCommandContext
 	execCommandContext = func(ctx context.Context, name string, args ...string) *exec.Cmd {
 		// Exit 0 without creating or replacing the output.
-		return exec.CommandContext(ctx, "true")
+		return fakeEngine(ctx, "noop")
 	}
 	defer func() { execCommandContext = old }()
 
@@ -98,7 +131,7 @@ func TestRunScriptArgv(t *testing.T) {
 	old := execCommandContext
 	execCommandContext = func(ctx context.Context, name string, args ...string) *exec.Cmd {
 		got = args
-		return exec.CommandContext(ctx, "cp", in, out)
+		return fakeEngine(ctx, "copy", in, out)
 	}
 	defer func() { execCommandContext = old }()
 
@@ -128,7 +161,7 @@ func TestRecalculateArgv(t *testing.T) {
 			old := execCommandContext
 			execCommandContext = func(ctx context.Context, name string, args ...string) *exec.Cmd {
 				got = append([]string{name}, args...)
-				return exec.CommandContext(ctx, "cp", in, out)
+				return fakeEngine(ctx, "copy", in, out)
 			}
 			t.Cleanup(func() { execCommandContext = old })
 			h := New("/bin/engine")
