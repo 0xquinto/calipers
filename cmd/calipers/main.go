@@ -192,7 +192,6 @@ func generateGolden(host excel.Host, inputPath, scriptPath, outputPath string) e
 
 func printf(format string, args ...any) {
 	fmt.Printf(format, args...)
-	_ = os.Stdout.Sync()
 }
 
 func sidecarMeta(info excel.HostInfo, inputPath, scriptPath string) golden.Meta {
